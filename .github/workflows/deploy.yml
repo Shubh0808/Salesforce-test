@@ -1,4 +1,4 @@
-name: Salesforce CI/CD
+name: Salesforce CI/CD (Sandbox)
 
 on:
   push:
@@ -18,28 +18,25 @@ jobs:
       with:
         node-version: 22
 
-    - name: Install Salesforce CLI
+    - name: Install Salesforce CLI (sf)
       run: npm install --global @salesforce/cli
 
     - name: Verify Salesforce CLI
-      run: sfdx --version
+      run: sf --version
 
     # --- Authenticate to Salesforce Sandbox ---
-    # Option 1 (recommended for CI/CD): JWT-based auth
-    # Option 2 (simple for Sandbox): use stored credentials
-
-    - name: Authenticate with Sandbox
+    - name: Authenticate to Sandbox
       env:
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
       run: |
         echo "Authenticating to Salesforce Sandbox..."
-        sfdx auth:login -r https://test.salesforce.com -u "$SF_USERNAME" -p "$SF_PASSWORD$SF_SECURITY_TOKEN"
-        sfdx org:list
+        # use CLI interactive login for Sandbox (non-MFA)
+        sf org login web --instance-url https://test.salesforce.com --set-default --alias sandbox --username "$SF_USERNAME" --password "$SF_PASSWORD$SF_SECURITY_TOKEN"
 
-    # --- Deploy to Sandbox ---
-    - name: Deploy Metadata to Sandbox
+    # --- Deploy Metadata ---
+    - name: Deploy to Sandbox
       run: |
-        echo "Deploying source to Sandbox..."
-        sfdx force:source:deploy -p force-app --targetusername ${{ secrets.SF_USERNAME }} --testlevel RunLocalTests
+        echo "Deploying to Salesforce Sandbox..."
+        sf project deploy start --target-org sandbox --source-dir force-app --test-level RunLocalTests
